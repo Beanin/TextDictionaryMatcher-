@@ -1,43 +1,139 @@
 #include "SingleMatcher.h"
+#include <set>
+#include <algorithm> 
 
-TSingleTemplateMatcher::TSingleTemplateMatcher():initialized(false), substr_(), currentvalue(0), values() {
+TSingleTemplateMatcher::TSingleTemplateMatcher():initialized(false), substr_(),p_func_values(), currentvalue(0)  {
+	p_func_values.resize(2,0);
 }
 
 TStringID TSingleTemplateMatcher::AddTemplate(const string &template_) {
 	if (initialized) 
-		throw std::logic_error("more than one templates adding");
-	//substr_ = "$";
-	substr_+=template_; 
-	substr_.push_back('$');
-	values.reserve(substr_.length());
-	values.push_back(0);
-	for (size_t prefix_number = 1; prefix_number < substr_.length(); ++prefix_number) 
-		values.push_back(AddChar(substr_[prefix_number]));
+		throw std::logic_error("More than one templates adding");
+	substr_ = std::deque<char> (template_.begin(),template_.end()); 
+	substr_.push_back(static_cast<char>(10));
+	substr_.push_front(static_cast<char>(10));
 	initialized = true;
 	return 0;
 }
 
-size_t TSingleTemplateMatcher::AddChar(char new_char) {
-	while (currentvalue > 0 && substr_[currentvalue]!=new_char) {
-		currentvalue = values[currentvalue - 1];
+
+
+size_t TSingleTemplateMatcher::p_func(size_t pi_prev, char ch) {
+	if (p_func_values[pi_prev] + 1 == 0) 
+		p_func_values[pi_prev] = p_func(p_func_values[pi_prev - 1], substr_[pi_prev]);
+	while (pi_prev > 0 && substr_[pi_prev + 1] != ch) {
+		pi_prev = p_func_values[pi_prev];
 	}
-	if (substr_[currentvalue]==new_char)
-		return ++currentvalue;
+	if (substr_[pi_prev + 1]==ch) {
+		if (pi_prev + 1>= p_func_values.size())
+			p_func_values.push_back(-1);
+		return pi_prev + 1; 
+	}
 	else
-		return currentvalue;
+		return pi_prev;
 }
 
+void TSingleTemplateMatcher::handlesymbol(TMatchResults& Result, char ch, size_t shift, TStringID templateid = 0) {
+	currentvalue = p_func(currentvalue, ch);
+	if (currentvalue == substr_.size() - 2) 
+	Result.push_back(std::make_pair(shift, templateid));
+}
 TMatchResults TSingleTemplateMatcher::MatchStream(ICharStream &stream) {
 	size_t shift = 0;
 	TMatchResults Matches;
+	p_func_values.resize(2,0);
 	while (!stream.IsEmpty()) {
-		if (AddChar(stream.GetChar()) == substr_.length() - 1) 
-			Matches.push_back(std::make_pair(2 + shift-substr_.length(), 0));
-		++shift;
+		char newchar=stream.GetChar();
+		if (static_cast<int>(newchar) < 32 || static_cast<int>(newchar) > 255) 
+			throw std::logic_error("Character out of range");
+		handlesymbol(Matches, newchar, shift, 0);
+		shift++;
 	}
+	p_func_values.clear();
+	currentvalue = 0;
 	return Matches;
 }
 
 
+void TSingleTemplateMatcher::AppendCharToTemplate(char c) {
+	if (!initialized)
+		throw std::logic_error("Appending to empty template");
+	substr_.pop_back();
+	substr_.push_back(c);
+	substr_.push_back(static_cast<char>(10));
+}
+
+void TSingleTemplateMatcher::PrependCharToTemplate(char c) {
+	if (!initialized)
+		throw std::logic_error("Prepending to empty template");
+	substr_.pop_front();
+	substr_.push_front(c);
+	substr_.push_front(static_cast<char>(10));
+}
+TWildcardSingleTemplateMatcher::TWildcardSingleTemplateMatcher():initialized(false),substring(),
+	Matchers(), Parts_range() {
+}
 
 
+
+TStringID TWildcardSingleTemplateMatcher::AddTemplate(const string &template_) {
+	if (initialized)
+		throw std::logic_error("More than one templates adding");
+	substring = template_;
+	size_t partbegin,partend;
+	partbegin = 0;
+	while (partbegin < substring.size() && substring[partbegin]=='?')
+			partbegin++;
+	partend = std::min(substring.find_first_of('?'),substring.size());
+	while(partbegin < substring.size()) {
+		Matchers.push_back(TSingleTemplateMatcher());
+		Matchers.back().AddTemplate(string(&substring[partbegin],&substring[partend]));
+		Parts_range.push_back(std::make_pair(partbegin,partend));
+		partbegin = partend + 1;
+		while (partbegin < substring.size() && substring[partbegin]=='?')
+			partbegin++;
+		partend = std::min(substring.find_first_of('?',partbegin),substring.size());
+	}
+	initialized = true;
+	return 0;
+}
+
+TMatchResults TWildcardSingleTemplateMatcher::MatchStream(ICharStream &stream) {
+	TMatchResults PartsMatchResult; 
+	TMatchResults Result; 
+	size_t streamlength = 0;
+	std::deque<std::set<TStringID>> buffer(substring.size());
+	size_t shift = 0;
+	while (!stream.IsEmpty()) {
+		streamlength++;
+		char newchar=stream.GetChar();
+		if (static_cast<int>(newchar) < 32 || static_cast<int>(newchar) > 255) 
+			throw std::logic_error("Character out of range");
+		for (size_t partnumber = 0; partnumber < Parts_range.size(); ++partnumber)   
+			Matchers[partnumber].handlesymbol(PartsMatchResult, newchar, shift, partnumber);
+		shift++;
+	}
+	shift = 0;
+	sort(PartsMatchResult.begin(), PartsMatchResult.end());
+	size_t PartsMatchResultShift = 0;
+	while (PartsMatchResultShift < PartsMatchResult.size() || shift + substring.size() < streamlength) {
+		while (!PartsMatchResult.empty() && PartsMatchResultShift < PartsMatchResult.size() &&
+			PartsMatchResult[PartsMatchResultShift].first - shift < substring.size()) {
+				buffer[PartsMatchResult[PartsMatchResultShift].first - shift].insert(PartsMatchResult[PartsMatchResultShift].second);
+			PartsMatchResultShift++;
+		}
+		bool Match = true;
+		size_t partnumber = 0;
+		while (Match && partnumber < Parts_range.size()) {
+			if (!buffer[Parts_range[partnumber].second - 1].count(partnumber)) 	
+				Match = false;
+			partnumber++;
+		}
+		if (Match) 
+			Result.push_back(std::make_pair(shift + substring.size() - 1,0));
+		shift++;
+		buffer.pop_front();
+		buffer.push_back(std::set<TStringID>());
+	}
+	return Result;
+}

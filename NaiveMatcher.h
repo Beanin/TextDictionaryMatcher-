@@ -1,3 +1,4 @@
+#pragma once
 #include "Base.h"
 #include "trie.h"
 using std::shared_ptr;
@@ -8,6 +9,7 @@ private:
 	std::vector<shared_ptr<TTrieNode>> template_ends;
 	size_t maxtemplatelength;
 public:
+	TNaiveTemplateMatcher();
 	TStringID AddTemplate(const std::string &templatestr) override;
 	TMatchResults MatchStream(ICharStream &stream) override;
 };
