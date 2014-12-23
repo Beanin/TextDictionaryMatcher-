@@ -44,6 +44,20 @@ BOOST_AUTO_TEST_CASE(SingleMatcherSimpleTest)
 	Teststream2.reset();
 	TestSingle1.PrependCharToTemplate('a');
 	BOOST_CHECK(CompareResults(TestSingle1.MatchStream(Teststream2),TrueAns4));
+	TSingleTemplateMatcher TestSingle2;
+	TStringStream Teststream4("abacabadabacaba");
+	TMatchResults TrueAns5;
+	templateid = TestSingle2.AddTemplate("ba");
+	TrueAns5.push_back(make_pair(2,templateid));
+	TrueAns5.push_back(make_pair(6,templateid));
+	TrueAns5.push_back(make_pair(10,templateid));
+	TrueAns5.push_back(make_pair(14,templateid));
+	BOOST_CHECK(CompareResults(TestSingle2.MatchStream(Teststream4),TrueAns5));
+	TestSingle2.AppendCharToTemplate('d');
+	TrueAns5.clear();
+	Teststream4.reset();
+	TrueAns5.push_back(make_pair(7,templateid));
+	BOOST_CHECK(CompareResults(TestSingle2.MatchStream(Teststream4),TrueAns5));
 	}
 BOOST_AUTO_TEST_CASE(SingleMatcherBoundariesTest) {
 	TStringStream emptystream("");
@@ -174,9 +188,9 @@ BOOST_AUTO_TEST_CASE(SingleMatcherTimeTest)
 BOOST_AUTO_TEST_CASE(SingleMatcherStressTest)
 {
 	srand(time(0));
-	for (size_t testnumber = 0; testnumber < 20; ++testnumber) {
-		size_t templatesize = rand() % 8 + 1;
-		size_t textsize = rand() % 1000;
+	for (size_t testnumber = 0; testnumber < 100; ++testnumber) {
+		size_t templatesize = rand() % 10 + 1;
+		size_t textsize = rand() % 10000;
 		string substring;
 		for (size_t i = 0; i < templatesize; ++i)
 			substring.push_back('a'+rand()%3);

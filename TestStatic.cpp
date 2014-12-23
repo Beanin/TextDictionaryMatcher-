@@ -196,7 +196,7 @@ public:
 };
 
 BOOST_AUTO_TEST_CASE(StaticMatcherStressTest){
-	for (size_t testnumber = 0; testnumber < 10; ++testnumber) {
+	for (size_t testnumber = 0; testnumber < 100; ++testnumber) {
 		vector<string> templates;
 		templates.resize(rand()%15);
 		for (size_t template_num = 0; template_num < templates.size();++template_num) {
@@ -219,8 +219,8 @@ BOOST_AUTO_TEST_CASE(StaticMatcherStressTest){
 		BOOST_CHECK(CompareMatchersResults(StaticMatcher, NaiveMatcher, test1, test2));
 	}
 }
-BOOST_AUTO_TEST_CASE(DynamicMatcherStressTest1) {
-	for (size_t testnumber = 0; testnumber < 50; ++testnumber) {
+BOOST_AUTO_TEST_CASE(DynamicMatcherStressTest) {
+	for (size_t testnumber = 0; testnumber < 100; ++testnumber) {
 		vector<string> templates;
 		templates.resize(rand()%15);
 		for (size_t template_num = 0; template_num < templates.size();++template_num) {
@@ -242,39 +242,5 @@ BOOST_AUTO_TEST_CASE(DynamicMatcherStressTest1) {
 		TNaiveTemplateMatcher NaiveMatcher; 
 		BOOST_CHECK(CompareMatchersResults(DynamicMatcher, NaiveMatcher, test1, test2));
 	}
-}
-BOOST_AUTO_TEST_CASE(DynamicMatcherStressTest2)
-{
-	srand(time(0));
-	
-	for (size_t testnumber =0; testnumber < 20; ++testnumber){
-		
-			TDynamicTemplateMatcher DynamicMatcher;
-			vector<string> templates;
-			size_t MatchesCount = rand()%10;
-			for (size_t matchnumber = 0; matchnumber < MatchesCount; ++matchnumber) {
-				try {
-					size_t templates_count = rand()%10;
-					for (size_t template_number = 0; template_number < templates_count; ++template_number) {
-						size_t template_len = rand()%6 + 1;
-						string pattern;
-						for (size_t i = 0 ; i < template_len; ++i)
-							pattern.push_back('a'+rand()%3);
-						templates.push_back(pattern);
-						DynamicMatcher.AddTemplate(pattern);
-					}
-					TStaticTemplateMatcher StaticMatcher;
-					for (size_t template_number = 0; template_number < templates.size(); ++template_number)
-						StaticMatcher.AddTemplate(templates[template_number]);
-					string text;
-					size_t textlen = rand()%10000;
-					for (size_t i = 0;i < textlen; ++i) 
-						text.push_back('a'+rand()%3);
-					TStringStream teststream1(text), teststream2(text);
-					BOOST_CHECK(CompareResults(StaticMatcher.MatchStream(teststream1),DynamicMatcher.MatchStream(teststream2)));
-			
-				} catch(...) {}
-			} 
-		}
-}
+} 
 
