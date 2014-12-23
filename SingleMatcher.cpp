@@ -3,14 +3,16 @@
 #include <algorithm> 
 #include <iostream>
 
-TSingleTemplateMatcher::TSingleTemplateMatcher():initialized(false), substr_(),p_func_values(), currentvalue(0)  {
+TSingleTemplateMatcher::TSingleTemplateMatcher():actioncount(0), initialized(false), substr_(),p_func_values(), currentvalue(0)  {
+	actioncount+=2;
 	p_func_values.resize(2,0);
 }
 
 TStringID TSingleTemplateMatcher::AddTemplate(const string &template_) {
 	if (initialized) 
 		throw std::logic_error("More than one templates adding");
-	substr_ = std::deque<char> (template_.begin(),template_.end()); 
+	substr_ = std::deque<char> (template_.begin(),template_.end());
+	actioncount+=substr_.size() + 3;
 	substr_.push_back(static_cast<char>(10));
 	substr_.push_front(static_cast<char>(10));
 	initialized = true;
@@ -22,11 +24,14 @@ TStringID TSingleTemplateMatcher::AddTemplate(const string &template_) {
 size_t TSingleTemplateMatcher::p_func(size_t pi_prev, char ch) {
 	if (p_func_values[pi_prev] + 1 == 0) 
 		p_func_values[pi_prev] = p_func(p_func_values[pi_prev - 1], substr_[pi_prev]);
+	actioncount++;
 	while (pi_prev > 0 && substr_[pi_prev + 1] != ch) {
 		pi_prev = p_func_values[pi_prev];
+		actioncount++;
 	}
 	if (substr_[pi_prev + 1]==ch) {
 		if (pi_prev + 1>= p_func_values.size())
+			actioncount++;
 			p_func_values.push_back(-1);
 		return pi_prev + 1; 
 	}
@@ -35,12 +40,14 @@ size_t TSingleTemplateMatcher::p_func(size_t pi_prev, char ch) {
 }
 
 void TSingleTemplateMatcher::handlesymbol(TMatchResults& Result, char ch, size_t shift, TStringID templateid = 0) {
+	actioncount++;
 	currentvalue = p_func(currentvalue, ch);
 	if (currentvalue == substr_.size() - 2) 
 	Result.push_back(std::make_pair(shift, templateid));
 }
 TMatchResults TSingleTemplateMatcher::MatchStream(ICharStream &stream) {
 	size_t shift = 0;
+	actioncount++;
 	TMatchResults Matches;
 	p_func_values.resize(2,0);
 	while (!stream.IsEmpty()) {
@@ -51,6 +58,7 @@ TMatchResults TSingleTemplateMatcher::MatchStream(ICharStream &stream) {
 		shift++;
 	}
 	currentvalue = 0;
+	std::cerr << actioncount << std::endl;
 	return Matches;
 }
 

@@ -53,26 +53,13 @@ BOOST_AUTO_TEST_CASE(SingleMatcherSimpleTest)
 	TrueAns5.push_back(make_pair(10,templateid));
 	TrueAns5.push_back(make_pair(14,templateid));
 	BOOST_CHECK(CompareResults(TestSingle2.MatchStream(Teststream4),TrueAns5));
-	TestSingle2.AppendCharToTemplate('d');
-	TrueAns5.clear();
-	Teststream4.reset();
-	TrueAns5.push_back(make_pair(7,templateid));
-	BOOST_CHECK(CompareResults(TestSingle2.MatchStream(Teststream4),TrueAns5));
-	}
-BOOST_AUTO_TEST_CASE(SingleMatcherBoundariesTest) {
-	TStringStream emptystream("");
-	TSingleTemplateMatcher TestSingle1;
-	TestSingle1.AddTemplate("abacabatest123");
-	BOOST_CHECK(CompareResults(TestSingle1.MatchStream(emptystream),TMatchResults()));
-	TStringStream teststream2("string");
-	BOOST_CHECK(CompareResults(TestSingle1.MatchStream(teststream2),TMatchResults()));
-	teststream2.reset();
-	TSingleTemplateMatcher TestSingle2;
-	TStringID templateid = TestSingle2.AddTemplate("string");
-	TMatchResults TrueAns2;
-	TrueAns2.push_back(make_pair(5,templateid));
-	BOOST_CHECK(CompareResults(TestSingle2.MatchStream(teststream2),TrueAns2));
+	
 }
+
+/*BOOST_AUTO_TEST_CASE(SingleMatcherBoundariesTest) {
+	
+
+}*/
 
 BOOST_AUTO_TEST_CASE(WildcardSingleMatcherBaseTest)
 {
@@ -158,32 +145,45 @@ BOOST_AUTO_TEST_CASE(SingleMatcherTimeTest)
 		for (size_t i = 0; i < 10; ++i)
 			substring.push_back('a'+rand()%3);
 	string text;
-		for (size_t i = 0; i < 100000; ++i)
+	text.reserve(1000000);
+		for (size_t i = 0; i < 1000000; ++i)
 			text.push_back('a'+rand()%3);
 	 
 	TStringStream teststream1(text); 
-	TNaiveTemplateMatcher SingleMatcher1;
+	TSingleTemplateMatcher SingleMatcher1;
 	time_t ts=clock();
 	SingleMatcher1.AddTemplate(substring);
 	SingleMatcher1.MatchStream(teststream1);
 	time_t tf=clock();
-	std::cout << 1.0 * (tf - ts)/CLOCKS_PER_SEC;
-
-
-	for(size_t i = 0; i< 100; ++i) 	{
-		size_t templatesize = rand() % 10 + 1;
-		size_t textsize = rand() % 100000;
-		string substring;
-		for (size_t i = 0; i < templatesize; ++i)
-			substring.push_back('a'+rand()%3);
-		string text;
-		for (size_t i = 0; i < textsize; ++i)
-			text.push_back('a'+rand()%3);
-		TStringStream teststream1(text); 
-		TSingleTemplateMatcher SingleMatcher1;
-		SingleMatcher1.AddTemplate(substring);
-		SingleMatcher1.MatchStream(teststream1);
-	}
+	std::cerr << 1.0 * (tf - ts)/CLOCKS_PER_SEC;
+	
+	//big tests
+	TSingleTemplateMatcher SingleMatcher2;
+	string long_a;
+	long_a.reserve(1000000);
+	for (size_t i = 0; i < 1000000; ++i)
+		long_a.push_back('a');
+	TStringStream teststream2(long_a);
+	SingleMatcher2.AddTemplate("a");
+	SingleMatcher2.MatchStream(teststream2);
+	TSingleTemplateMatcher SingleMatcher3;
+	SingleMatcher3.AddTemplate("aa");
+	teststream2.reset();
+	SingleMatcher3.MatchStream(teststream2);
+	for (size_t i = 0; i < 300; ++i)
+		long_a[rand()%1000000] = 'b';
+	TStringStream teststream3(long_a);
+	SingleMatcher3.MatchStream(teststream3);
+	string randomstr;
+	randomstr.reserve(1000000);
+	for (size_t i = 0; i < 1000000; ++i)
+		randomstr.push_back('a' + rand()%30);
+	size_t begin = rand()%500000;
+	size_t end = begin + rand() % 500000;
+	TSingleTemplateMatcher SingleMatcher4;
+	SingleMatcher4.AddTemplate(string(&randomstr[begin],&randomstr[end]));
+	TStringStream teststream4(randomstr);
+	SingleMatcher4.MatchStream(teststream4);
 }
 BOOST_AUTO_TEST_CASE(SingleMatcherStressTest)
 {

@@ -109,7 +109,7 @@ TStringID TDynamicTemplateMatcher::AddTemplate(const std::string &templatestr) {
 }
 
 TMatchResults TDynamicTemplateMatcher::MatchStream(ICharStream& stream){ 
-	std::vector<TOccurance> ans;
+	TMatchResults ans;
 	size_t pos = 0;
 	for (size_t groupnumber = 0; groupnumber < Matchers.size(); ++groupnumber) 
 		if (!Matchers[groupnumber].empty() && !Matchers[groupnumber][0].getroot()->terminal_.empty()) 

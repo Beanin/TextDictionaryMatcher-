@@ -7,6 +7,7 @@ using std::string;
 
 class TSingleTemplateMatcher:public IMetaTemplateMatcher {
 private:
+	unsigned long long actioncount;
 	bool initialized;
 	std::deque<char> substr_;
 	std::deque<size_t> p_func_values;
