@@ -6,12 +6,12 @@
 
 class TStaticTemplateMatcher:public IMetaTemplateMatcher, private TTrie {
 private:
-	shared_ptr<TTrieNode> moveto(shared_ptr<TTrieNode> node, char symbol);
-	shared_ptr<TTrieNode> suf_link_move(shared_ptr<TTrieNode> node);
-	shared_ptr<TTrieNode> hard_suf_link_move(shared_ptr<TTrieNode> node); 
+	weak_ptr<TTrieNode> moveto(weak_ptr<TTrieNode> node, char symbol);
+	weak_ptr<TTrieNode> suf_link_move(weak_ptr<TTrieNode> node);
+	weak_ptr<TTrieNode> hard_suf_link_move(weak_ptr<TTrieNode> node); 
 	std::vector<size_t> template_lengths; 
 	shared_ptr<TTrieNode> sink;
-	shared_ptr<TTrieNode> currentnode;
+	weak_ptr<TTrieNode> currentnode;
 	bool used;
 	void Handlesymbol(char ch, TMatchResults& ans, size_t &pos);
 	void AllowSameTemplates();

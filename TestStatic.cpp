@@ -196,7 +196,7 @@ public:
 };
 
 BOOST_AUTO_TEST_CASE(StaticMatcherStressTest){
-	for (size_t testnumber = 0; testnumber < 100; ++testnumber) {
+	for (size_t testnumber = 0; testnumber < 10; ++testnumber) {
 		vector<string> templates;
 		templates.resize(rand()%15);
 		for (size_t template_num = 0; template_num < templates.size();++template_num) {
@@ -219,8 +219,31 @@ BOOST_AUTO_TEST_CASE(StaticMatcherStressTest){
 		BOOST_CHECK(CompareMatchersResults(StaticMatcher, NaiveMatcher, test1, test2));
 	}
 }
-
-BOOST_AUTO_TEST_CASE(DynamicMatcherStressTest)
+BOOST_AUTO_TEST_CASE(DynamicMatcherStressTest1) {
+	for (size_t testnumber = 0; testnumber < 50; ++testnumber) {
+		vector<string> templates;
+		templates.resize(rand()%15);
+		for (size_t template_num = 0; template_num < templates.size();++template_num) {
+			size_t templatesize = rand() % 10 + 1;
+			string substring;
+			for (size_t i = 0; i < templatesize; ++i)
+				substring.push_back('a'+rand()%3);
+			templates[template_num]=std::move(substring);
+		}
+		
+		size_t textsize = rand() % 100000;
+		string text;
+		for (size_t i = 0; i < textsize; ++i)
+			text.push_back('a'+rand()%3);
+		TStringStream teststream1(text),teststream2(text); 
+		staticmatchertest<TDynamicTemplateMatcher> test1(teststream1, templates);
+		staticmatchertest<TNaiveTemplateMatcher> test2(teststream2, templates);
+		TDynamicTemplateMatcher DynamicMatcher;
+		TNaiveTemplateMatcher NaiveMatcher; 
+		BOOST_CHECK(CompareMatchersResults(DynamicMatcher, NaiveMatcher, test1, test2));
+	}
+}
+BOOST_AUTO_TEST_CASE(DynamicMatcherStressTest2)
 {
 	srand(time(0));
 	

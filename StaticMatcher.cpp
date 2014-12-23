@@ -8,32 +8,32 @@ TStaticTemplateMatcher::TStaticTemplateMatcher():TTrie(),template_lengths(),sink
 }
 
 
-shared_ptr<TTrieNode> TStaticTemplateMatcher::moveto(shared_ptr<TTrieNode> node, char symbol) {
-	if (node == sink)
-		return getroot();
-	if (node->isEdge(symbol))
-		return node->next(symbol);
+weak_ptr<TTrieNode> TStaticTemplateMatcher::moveto(weak_ptr<TTrieNode> node, char symbol) {
+	if (node.lock() == sink)
+		return weak_ptr<TTrieNode>(getroot());
+	if (node.lock()->isEdge(symbol))
+		return weak_ptr<TTrieNode>(node.lock()->next(symbol));
 	return moveto(suf_link_move(node),symbol);
 }
-shared_ptr<TTrieNode> TStaticTemplateMatcher::suf_link_move(shared_ptr<TTrieNode> node) {
-	if (node->suf_link_)
-		return node->suf_link_;
-	shared_ptr<TTrieNode> prev = node->parentnode_;
-	while (prev != getroot() && !suf_link_move(prev)->isEdge(node->parentsymbol_))
+weak_ptr<TTrieNode> TStaticTemplateMatcher::suf_link_move(weak_ptr<TTrieNode> node) {
+	if (node.lock()->suf_link_.lock())
+		return node.lock()->suf_link_;
+	weak_ptr<TTrieNode> prev = node.lock()->parentnode_;
+	while (prev.lock() != getroot() && !suf_link_move(prev).lock()->isEdge(node.lock()->parentsymbol_))
 		prev = suf_link_move(prev);
-	node->suf_link_ = moveto(suf_link_move(prev),node->parentsymbol_);
-	return node->suf_link_;
+	node.lock()->suf_link_ = moveto(suf_link_move(prev),node.lock()->parentsymbol_);
+	return node.lock()->suf_link_;
 }
 
-shared_ptr<TTrieNode> TStaticTemplateMatcher::hard_suf_link_move(shared_ptr<TTrieNode> node){
-	if (node->hard_suf_link_)
-		return node->hard_suf_link_;
-	if (!suf_link_move(node)->terminal_.empty())	{
-		node->hard_suf_link_ = suf_link_move(node);
-		return node->hard_suf_link_;
+weak_ptr<TTrieNode> TStaticTemplateMatcher::hard_suf_link_move(weak_ptr<TTrieNode> node){
+	if (node.lock()->hard_suf_link_.lock())
+		return node.lock()->hard_suf_link_;
+	if (!suf_link_move(node).lock()->terminal_.empty())	{
+		node.lock()->hard_suf_link_ = suf_link_move(node);
+		return node.lock()->hard_suf_link_;
 	}
-	node->hard_suf_link_= hard_suf_link_move(suf_link_move(node)); 
-	return node->hard_suf_link_; 
+	node.lock()->hard_suf_link_= hard_suf_link_move(suf_link_move(node)); 
+	return node.lock()->hard_suf_link_; 
 }
 
 TStringID TStaticTemplateMatcher::AddTemplate(const std::string &templatestr) {
@@ -45,11 +45,11 @@ TStringID TStaticTemplateMatcher::AddTemplate(const std::string &templatestr) {
 }
 void TStaticTemplateMatcher::Handlesymbol(char ch, TMatchResults& ans, size_t &pos) {
 	currentnode = moveto(currentnode, ch);
-		shared_ptr<TTrieNode> ansiterator = currentnode;
-		if (ansiterator->terminal_.empty())
+		weak_ptr<TTrieNode> ansiterator = currentnode;
+		if (ansiterator.lock()->terminal_.empty())
 			ansiterator = hard_suf_link_move(ansiterator);
-		while (!ansiterator->terminal_.empty()) {
-			for(TStringID &templateid: ansiterator->terminal_) {
+		while (!ansiterator.lock()->terminal_.empty()) {
+			for(TStringID &templateid: ansiterator.lock()->terminal_) {
 				ans.push_back(std::make_pair(pos, templateid));
 			}
 			ansiterator = hard_suf_link_move(ansiterator);
@@ -60,7 +60,7 @@ TMatchResults TStaticTemplateMatcher::MatchStream(ICharStream &stream) {
 	used = true;
 	std::vector<TOccurance> ans;
 	size_t pos = 0;
-	currentnode = getroot();
+	currentnode = weak_ptr<TTrieNode>(getroot());
 	if (!getroot()->terminal_.empty()) 
 		for (TStringID &templateid: getroot()->terminal_)
 			ans.push_back(std::make_pair(0,templateid));

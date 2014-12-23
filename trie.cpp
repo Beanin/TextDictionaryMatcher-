@@ -1,10 +1,10 @@
 #include "trie.h"
-	TTrieNode::TTrieNode():terminal_(),edges(),parentnode_(nullptr),parentsymbol_(),
-		height_(),suf_link_(nullptr), hard_suf_link_(nullptr) {
+	TTrieNode::TTrieNode():terminal_(),edges(),parentnode_(),parentsymbol_(),
+		height_(),suf_link_(), hard_suf_link_() {
 	}
-	TTrieNode::TTrieNode(shared_ptr<TTrieNode> parentnode, char parentsymbol, size_t height):terminal_(),
+	TTrieNode::TTrieNode(weak_ptr<TTrieNode> parentnode, char parentsymbol, size_t height):terminal_(),
 		edges(),parentnode_(parentnode),parentsymbol_(parentsymbol),height_(height),
-		suf_link_(nullptr), hard_suf_link_(nullptr)  {
+		suf_link_(), hard_suf_link_()  {
 	}
 	shared_ptr<TTrieNode> TTrieNode::next(char nextsymbol) {
 		return edges[nextsymbol];
@@ -29,7 +29,7 @@
 	char TTrieNode::parentsymbol() const {
 		return parentsymbol_;
 	}
-	shared_ptr<TTrieNode> TTrieNode::parent() const  {
+	weak_ptr<TTrieNode> TTrieNode::parent() const  {
 		return parentnode_;
 	}
 
