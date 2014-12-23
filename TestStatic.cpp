@@ -1,3 +1,4 @@
+#pragma comment(linker, "/STACK:66777216")
 #include "BaseTest.h"
 #include "StaticMatcher.h"
 using std::make_pair;
@@ -247,36 +248,36 @@ BOOST_AUTO_TEST_CASE(DynamicMatcherStressTest) {
 BOOST_AUTO_TEST_CASE(StaticMatcherBigTests) {
 	srand(time(0));
 	TStaticTemplateMatcher StaticMatcher2;
-		string long_a;
-		long_a.reserve(1000000);
-		for (size_t i = 0; i < 1000000; ++i)
-			long_a.push_back('a');
-		TStringStream teststream2(long_a);
-		StaticMatcher2.AddTemplate("a");
-		StaticMatcher2.AddTemplate("aa");
-		StaticMatcher2.AddTemplate("aaa");
-		StaticMatcher2.MatchStream(teststream2);
-		for (size_t i = 0; i < 300; ++i)
-			long_a[rand()%1000000] = 'b';
-		TStringStream teststream3(long_a);
-		StaticMatcher2.MatchStream(teststream3);
-		string randomstr;
-		randomstr.reserve(1000000);
-		for (size_t i = 0; i < 1000000; ++i)
-			randomstr.push_back('a' + rand()%30);
-		TStaticTemplateMatcher StaticMatcher4;
-		size_t begin = rand()%400000;
-		size_t end = begin+ 1 + rand() % 400000;
+	string long_a;
+	long_a.reserve(1000000);
+	for (size_t i = 0; i < 1000000; ++i)
+		long_a.push_back('a');
+	TStringStream teststream2(long_a);
+	StaticMatcher2.AddTemplate("a");
+	StaticMatcher2.AddTemplate("aa");
+	StaticMatcher2.AddTemplate("aaa");
+	StaticMatcher2.MatchStream(teststream2);
+	for (size_t i = 0; i < 300; ++i)
+		long_a[rand()%1000000] = 'b';
+	TStringStream teststream3(long_a);
+	StaticMatcher2.MatchStream(teststream3);
+	StaticMatcher2;
+	string randomstr;
+	randomstr.reserve(1000000);
+	for (size_t i = 0; i < 1000000; ++i)
+		randomstr.push_back('a' + rand()%30);
+	TStaticTemplateMatcher StaticMatcher4;
+	size_t begin = rand()%400000;
+	size_t end = begin+ 1 + rand() % 400000;
+	StaticMatcher4.AddTemplate(string(&randomstr[begin],&randomstr[end]));
+	begin = rand()%400000;
+	end = begin + 1 + rand() % 4000000;
 		
-		StaticMatcher4.AddTemplate(string(&randomstr[begin],&randomstr[end]));
-		begin = rand()%400000;
-		end = begin + 1 + rand() % 4000000;
+	StaticMatcher4.AddTemplate(string(&randomstr[begin],&randomstr[end]));
+	begin = rand()%400000;
+	end = begin + 1 + rand() % 400000;
 		
-		StaticMatcher4.AddTemplate(string(&randomstr[begin],&randomstr[end]));
-		begin = rand()%400000;
-		end = begin + 1 + rand() % 400000;
-		
-		StaticMatcher4.AddTemplate(string(&randomstr[begin],&randomstr[end]));
-		TStringStream teststream4(randomstr);
-		StaticMatcher4.MatchStream(teststream4);
+	StaticMatcher4.AddTemplate(string(&randomstr[begin],&randomstr[end]));
+	TStringStream teststream4(randomstr);
+	StaticMatcher4.MatchStream(teststream4);
 }

@@ -136,7 +136,7 @@ public:
 		return Matcher.MatchStream(stream_);
 	}
 };
-BOOST_AUTO_TEST_CASE(SingleMatcherTimeTest)
+/*BOOST_AUTO_TEST_CASE(SingleMatcherTimeTest)
 {
 
 	srand(time(0));
@@ -254,4 +254,4 @@ BOOST_AUTO_TEST_CASE(WildcardSingleMatcherStressTest)
 		WildcardMatcher.AddTemplate(substring);
 		BOOST_CHECK(CompareResults(WildcardMatcher.MatchStream(teststream1),WildcardNaiveMatch(substring,teststream2)));
 	}
-}
+}*/
