@@ -88,6 +88,11 @@ BOOST_AUTO_TEST_CASE(WildcardSingleMatcherSimpleTest)
 	TMatchResults TrueAns1;
 	TrueAns1.push_back(make_pair(2,templateid));
 	BOOST_CHECK(CompareResults(TrueAns1, TestWildcard1.MatchStream(Teststream1)));
+	TWildcardSingleTemplateMatcher TestWildcard5;
+	TestWildcard5.AddTemplate("??");
+	TStringStream smallstream("abs");
+	TrueAns1.push_back(make_pair(1,templateid));
+	BOOST_CHECK(CompareResults(TrueAns1, TestWildcard5.MatchStream(smallstream)));
 	TStringStream Teststream2("baacaababa");
 	TMatchResults TrueAns2;
 	TrueAns2.push_back(make_pair(4,templateid));
@@ -139,7 +144,7 @@ BOOST_AUTO_TEST_CASE(SingleMatcherTimeTest)
 		for (size_t i = 0; i < 10; ++i)
 			substring.push_back('a'+rand()%3);
 	string text;
-		for (size_t i = 0; i < 1000000; ++i)
+		for (size_t i = 0; i < 100000; ++i)
 			text.push_back('a'+rand()%3);
 	 
 	TStringStream teststream1(text); 
@@ -169,9 +174,9 @@ BOOST_AUTO_TEST_CASE(SingleMatcherTimeTest)
 BOOST_AUTO_TEST_CASE(SingleMatcherStressTest)
 {
 	srand(time(0));
-	for (size_t testnumber = 0; testnumber < 100; ++testnumber) {
+	for (size_t testnumber = 0; testnumber < 20; ++testnumber) {
 		size_t templatesize = rand() % 8 + 1;
-		size_t textsize = rand() % 10000;
+		size_t textsize = rand() % 1000;
 		string substring;
 		for (size_t i = 0; i < templatesize; ++i)
 			substring.push_back('a'+rand()%3);
@@ -186,4 +191,53 @@ BOOST_AUTO_TEST_CASE(SingleMatcherStressTest)
 		BOOST_CHECK(CompareMatchersResults(SingleMatcher, NaiveMatcher, test1, test2));
 	}
 	
+}
+
+TMatchResults WildcardNaiveMatch(const string &substring, ICharStream &stream){
+	string buffer;
+	TMatchResults Matches;
+	size_t substringstart = 0;
+	while (!stream.IsEmpty() || buffer.length()) {
+		while (buffer.length() < substring.size() && !stream.IsEmpty()) {
+			char newch=stream.GetChar();
+			if (static_cast<int>(newch) < 32 || static_cast<int>(newch) > 255) 
+				throw std::logic_error("Character out of range");
+			buffer.push_back(newch);
+		}
+		if (buffer.length() >= substring.size()){
+			bool match = true;
+			for (size_t symbnum = 0; symbnum < substring.size();++symbnum) {
+				if (buffer[symbnum]!=substring[symbnum]&&substring[symbnum]!='?')
+					match = false; 
+			}
+			if (match) 
+				Matches.push_back(std::make_pair(substringstart + substring.size() - 1,0));
+		}
+		buffer.erase(0,1);
+		substringstart++;
+		
+	}
+	return Matches;
+}
+
+BOOST_AUTO_TEST_CASE(WildcardSingleMatcherStressTest)
+{
+	srand(time(0));
+	for (size_t testnumber = 0; testnumber < 100; ++testnumber) {
+		size_t templatesize = rand() % 10 + 1;
+		size_t textsize = rand() % 10000;
+		string substring;
+		for (size_t i = 0; i < templatesize; ++i) {
+			substring.push_back('a'+rand()%3);
+			if (rand()%10 < 3)
+				substring.push_back('?');
+		}
+		string text;
+		for (size_t i = 0; i < textsize; ++i)
+			text.push_back('a'+rand()%3);
+		TStringStream teststream1(text),teststream2(text); 
+		TWildcardSingleTemplateMatcher WildcardMatcher;
+		WildcardMatcher.AddTemplate(substring);
+		BOOST_CHECK(CompareResults(WildcardMatcher.MatchStream(teststream1),WildcardNaiveMatch(substring,teststream2)));
+	}
 }

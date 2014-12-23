@@ -3,7 +3,7 @@
 #include <algorithm> 
 #include <iostream>
 
-TSingleTemplateMatcher::TSingleTemplateMatcher():initialized(false), substr_(),p_func_values(), currentvalue(0),count(0)  {
+TSingleTemplateMatcher::TSingleTemplateMatcher():initialized(false), substr_(),p_func_values(), currentvalue(0)  {
 	p_func_values.resize(2,0);
 }
 
@@ -20,9 +20,6 @@ TStringID TSingleTemplateMatcher::AddTemplate(const string &template_) {
 
 
 size_t TSingleTemplateMatcher::p_func(size_t pi_prev, char ch) {
-	count++;
-	if (count > 10000000) 
-		std::cout << count;
 	if (p_func_values[pi_prev] + 1 == 0) 
 		p_func_values[pi_prev] = p_func(p_func_values[pi_prev - 1], substr_[pi_prev]);
 	while (pi_prev > 0 && substr_[pi_prev + 1] != ch) {
@@ -118,7 +115,7 @@ TMatchResults TWildcardSingleTemplateMatcher::MatchStream(ICharStream &stream) {
 	}
 	shift = 0;
 	size_t PartsMatchResultShift = 0;
-	while (PartsMatchResultShift < PartsMatchResult.size() || shift + substring.size() < streamlength) {
+	while (PartsMatchResultShift < PartsMatchResult.size() || shift + substring.size() <= streamlength) {
 		while (!PartsMatchResult.empty() && PartsMatchResultShift < PartsMatchResult.size() &&
 			PartsMatchResult[PartsMatchResultShift].first - shift < substring.size()) {
 				buffer[PartsMatchResult[PartsMatchResultShift].first - shift][PartsMatchResult[PartsMatchResultShift].second] = true;

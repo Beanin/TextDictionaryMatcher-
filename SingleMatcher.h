@@ -14,7 +14,6 @@ private:
 	size_t p_func(size_t pi_prev, char ch);
 	void handlesymbol(TMatchResults &Result, char ch, size_t shift, TStringID templateid);
 public:
-	long long count;
 	TSingleTemplateMatcher();
 	void AppendCharToTemplate(char c);
 	void PrependCharToTemplate(char c);
