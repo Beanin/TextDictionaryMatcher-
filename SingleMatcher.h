@@ -11,10 +11,10 @@ private:
 	std::deque<char> substr_;
 	std::deque<size_t> p_func_values;
 	ptrdiff_t currentvalue; 
-	//size_t AddChar(char newchar); 
 	size_t p_func(size_t pi_prev, char ch);
 	void handlesymbol(TMatchResults &Result, char ch, size_t shift, TStringID templateid);
 public:
+	long long count;
 	TSingleTemplateMatcher();
 	void AppendCharToTemplate(char c);
 	void PrependCharToTemplate(char c);

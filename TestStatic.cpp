@@ -53,7 +53,23 @@ BOOST_AUTO_TEST_CASE(StaticMatcherSimpleTest) {
 	TrueAns4.push_back(make_pair(7,templateid));
 	TrueAns4.push_back(make_pair(9,templateid));
 	BOOST_CHECK(CompareResults(TrueAns4,TestStatic3.MatchStream(teststream3)));
+	
 }
+BOOST_AUTO_TEST_CASE(StaticMatcherBoundariesTest) {
+	TStaticTemplateMatcher TestStatic1;
+	vector<TStringID> templates;
+	templates.push_back(TestStatic1.AddTemplate("a"));
+	templates.push_back(TestStatic1.AddTemplate("b"));
+	templates.push_back(TestStatic1.AddTemplate("bbc"));
+	TStringStream teststream1("aaaca");
+	TMatchResults TrueAns1;
+	TrueAns1.push_back(make_pair(0, templates[0]));
+	TrueAns1.push_back(make_pair(1, templates[0]));
+	TrueAns1.push_back(make_pair(2, templates[0]));
+	TrueAns1.push_back(make_pair(4, templates[0]));
+	BOOST_CHECK(CompareResults(TestStatic1.MatchStream(teststream1),TrueAns1));
+}
+
 
 BOOST_AUTO_TEST_CASE(DynamicMatcherFailTest) {
 	TDynamicTemplateMatcher TestDynamic1;
@@ -163,4 +179,43 @@ BOOST_AUTO_TEST_CASE(T2DSingleMatcherSimpleTest) {
 	TrueAns2.push_back(make_pair(2,7));
 	TrueAns2.push_back(make_pair(5,3));
 	BOOST_CHECK(CompareResults(TestT2DSingle2.MatchTable(B),TrueAns2));
+}
+
+template <typename MatcherType>
+class staticmatchertest {
+public:
+	MatcherType Matcher;
+	ICharStream& stream_;
+	vector<string> pattern_;
+	staticmatchertest(ICharStream &stream, const vector<string>&pattern):stream_(stream), pattern_(pattern) {
+	}
+	TMatchResults operator()(MatcherType &Matcher){
+		for(auto &tmp:pattern_)Matcher.AddTemplate(tmp);
+		return Matcher.MatchStream(stream_);
+	}
+};
+
+BOOST_AUTO_TEST_CASE(StaticMatcherStressTest){
+	for (size_t testnumber = 0; testnumber < 20; ++testnumber) {
+		vector<string> templates;
+		templates.resize(rand()%15);
+		for (size_t template_num = 0; template_num < templates.size();++template_num) {
+			size_t templatesize = rand() % 10 + 1;
+			string substring;
+			for (size_t i = 0; i < templatesize; ++i)
+				substring.push_back('a'+rand()%3);
+			templates[template_num]=std::move(substring);
+		}
+		
+		size_t textsize = rand() % 100000;
+		string text;
+		for (size_t i = 0; i < textsize; ++i)
+			text.push_back('a'+rand()%3);
+		TStringStream teststream1(text),teststream2(text); 
+		staticmatchertest<TStaticTemplateMatcher> test1(teststream1, templates);
+		staticmatchertest<TNaiveTemplateMatcher> test2(teststream2, templates);
+		TStaticTemplateMatcher StaticMatcher;
+		TNaiveTemplateMatcher NaiveMatcher; 
+		BOOST_CHECK(CompareMatchersResults(StaticMatcher, NaiveMatcher, test1, test2));
+	}
 }

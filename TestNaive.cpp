@@ -107,11 +107,12 @@ BOOST_AUTO_TEST_CASE(NaiveMatcherBoundariesTest) {
 	templatesid.push_back(TestNaive1.AddTemplate("a"));
 	TMatchResults TrueAns1;
 	TrueAns1.push_back(make_pair(0,templatesid[0]));
-	BOOST_CHECK(CompareResults(TrueAns1,TestNaive1.MatchStream(teststream1)));
-
-
-}
-BOOST_AUTO_TEST_CASE(NaiveMatcherPerformanceTest) {
-	TNaiveTemplateMatcher TestNaive1;
+	BOOST_CHECK(CompareResults(TestNaive1.MatchStream(teststream1),TrueAns1));
+	TStringStream EmptyStream("");
+	TrueAns1.clear();
+	BOOST_CHECK(CompareResults(TestNaive1.MatchStream(EmptyStream),TrueAns1));
+	TestNaive1.AddTemplate("veryverylongtext");
+	TStringStream Teststream2("shorttext");
+	BOOST_CHECK(CompareResults(TestNaive1.MatchStream(Teststream2),TrueAns1));
 
 }

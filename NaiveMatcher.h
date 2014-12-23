@@ -6,6 +6,7 @@ using std::shared_ptr;
 class TNaiveTemplateMatcher:public IMetaTemplateMatcher {
 private:
 	TTrie templates;
+	std::vector<string> substrings;
 	std::vector<shared_ptr<TTrieNode>> template_ends;
 	size_t maxtemplatelength;
 public:

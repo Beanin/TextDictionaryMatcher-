@@ -1,8 +1,9 @@
 #include "SingleMatcher.h"
 #include <set>
 #include <algorithm> 
+#include <iostream>
 
-TSingleTemplateMatcher::TSingleTemplateMatcher():initialized(false), substr_(),p_func_values(), currentvalue(0)  {
+TSingleTemplateMatcher::TSingleTemplateMatcher():initialized(false), substr_(),p_func_values(), currentvalue(0),count(0)  {
 	p_func_values.resize(2,0);
 }
 
@@ -19,6 +20,9 @@ TStringID TSingleTemplateMatcher::AddTemplate(const string &template_) {
 
 
 size_t TSingleTemplateMatcher::p_func(size_t pi_prev, char ch) {
+	count++;
+	if (count > 10000000) 
+		std::cout << count;
 	if (p_func_values[pi_prev] + 1 == 0) 
 		p_func_values[pi_prev] = p_func(p_func_values[pi_prev - 1], substr_[pi_prev]);
 	while (pi_prev > 0 && substr_[pi_prev + 1] != ch) {
@@ -49,7 +53,6 @@ TMatchResults TSingleTemplateMatcher::MatchStream(ICharStream &stream) {
 		handlesymbol(Matches, newchar, shift, 0);
 		shift++;
 	}
-	p_func_values.clear();
 	currentvalue = 0;
 	return Matches;
 }
@@ -79,6 +82,7 @@ TWildcardSingleTemplateMatcher::TWildcardSingleTemplateMatcher():initialized(fal
 TStringID TWildcardSingleTemplateMatcher::AddTemplate(const string &template_) {
 	if (initialized)
 		throw std::logic_error("More than one templates adding");
+	initialized = true;
 	substring = template_;
 	size_t partbegin,partend;
 	partbegin = 0;
@@ -94,7 +98,6 @@ TStringID TWildcardSingleTemplateMatcher::AddTemplate(const string &template_) {
 			partbegin++;
 		partend = std::min(substring.find_first_of('?',partbegin),substring.size());
 	}
-	initialized = true;
 	return 0;
 }
 
@@ -102,7 +105,7 @@ TMatchResults TWildcardSingleTemplateMatcher::MatchStream(ICharStream &stream) {
 	TMatchResults PartsMatchResult; 
 	TMatchResults Result; 
 	size_t streamlength = 0;
-	std::deque<std::set<TStringID>> buffer(substring.size());
+	std::deque<std::vector<bool>> buffer(substring.size(),std::vector<bool> (Parts_range.size(),false));
 	size_t shift = 0;
 	while (!stream.IsEmpty()) {
 		streamlength++;
@@ -114,18 +117,17 @@ TMatchResults TWildcardSingleTemplateMatcher::MatchStream(ICharStream &stream) {
 		shift++;
 	}
 	shift = 0;
-	sort(PartsMatchResult.begin(), PartsMatchResult.end());
 	size_t PartsMatchResultShift = 0;
 	while (PartsMatchResultShift < PartsMatchResult.size() || shift + substring.size() < streamlength) {
 		while (!PartsMatchResult.empty() && PartsMatchResultShift < PartsMatchResult.size() &&
 			PartsMatchResult[PartsMatchResultShift].first - shift < substring.size()) {
-				buffer[PartsMatchResult[PartsMatchResultShift].first - shift].insert(PartsMatchResult[PartsMatchResultShift].second);
+				buffer[PartsMatchResult[PartsMatchResultShift].first - shift][PartsMatchResult[PartsMatchResultShift].second] = true;
 			PartsMatchResultShift++;
 		}
 		bool Match = true;
 		size_t partnumber = 0;
 		while (Match && partnumber < Parts_range.size()) {
-			if (!buffer[Parts_range[partnumber].second - 1].count(partnumber)) 	
+			if (!buffer[Parts_range[partnumber].second - 1][partnumber]) 	
 				Match = false;
 			partnumber++;
 		}
@@ -133,7 +135,7 @@ TMatchResults TWildcardSingleTemplateMatcher::MatchStream(ICharStream &stream) {
 			Result.push_back(std::make_pair(shift + substring.size() - 1,0));
 		shift++;
 		buffer.pop_front();
-		buffer.push_back(std::set<TStringID>());
+		buffer.push_back(std::vector<bool>(Parts_range.size(),false));
 	}
 	return Result;
 }

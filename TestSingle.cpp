@@ -1,7 +1,7 @@
 
 #include "BaseTest.h"
 #include "SingleMatcher.h"
-
+#include <iostream>
 using std::make_pair;
 
 BOOST_AUTO_TEST_CASE(SingleMatcherFailTest)
@@ -116,4 +116,74 @@ BOOST_AUTO_TEST_CASE(WildcardSingleMatcherSimpleTest)
 	TrueAns4.push_back(make_pair(29,templateid));
 
 	BOOST_CHECK(CompareResults(TrueAns4, TestWildcard2.MatchStream(Teststream4)));
+}
+template <typename MatcherType>
+class singlematchertest {
+public:
+	MatcherType Matcher;
+	ICharStream& stream_;
+	const string& pattern_;
+	singlematchertest(ICharStream &stream, const string &pattern):stream_(stream), pattern_(pattern) {
+	}
+	TMatchResults operator()(MatcherType &Matcher){
+		Matcher.AddTemplate(pattern_);
+		return Matcher.MatchStream(stream_);
+	}
+};
+BOOST_AUTO_TEST_CASE(SingleMatcherTimeTest)
+{
+
+	srand(time(0));
+	string substring;
+	
+		for (size_t i = 0; i < 10; ++i)
+			substring.push_back('a'+rand()%3);
+	string text;
+		for (size_t i = 0; i < 1000000; ++i)
+			text.push_back('a'+rand()%3);
+	 
+	TStringStream teststream1(text); 
+	TNaiveTemplateMatcher SingleMatcher1;
+	time_t ts=clock();
+	SingleMatcher1.AddTemplate(substring);
+	SingleMatcher1.MatchStream(teststream1);
+	time_t tf=clock();
+	std::cout << 1.0 * (tf - ts)/CLOCKS_PER_SEC;
+
+
+	for(size_t i = 0; i< 100; ++i) 	{
+		size_t templatesize = rand() % 10 + 1;
+		size_t textsize = rand() % 100000;
+		string substring;
+		for (size_t i = 0; i < templatesize; ++i)
+			substring.push_back('a'+rand()%3);
+		string text;
+		for (size_t i = 0; i < textsize; ++i)
+			text.push_back('a'+rand()%3);
+		TStringStream teststream1(text); 
+		TSingleTemplateMatcher SingleMatcher1;
+		SingleMatcher1.AddTemplate(substring);
+		SingleMatcher1.MatchStream(teststream1);
+	}
+}
+BOOST_AUTO_TEST_CASE(SingleMatcherStressTest)
+{
+	srand(time(0));
+	for (size_t testnumber = 0; testnumber < 100; ++testnumber) {
+		size_t templatesize = rand() % 8 + 1;
+		size_t textsize = rand() % 10000;
+		string substring;
+		for (size_t i = 0; i < templatesize; ++i)
+			substring.push_back('a'+rand()%3);
+		string text;
+		for (size_t i = 0; i < textsize; ++i)
+			text.push_back('a'+rand()%3);
+		TStringStream teststream1(text),teststream2(text); 
+		singlematchertest<TSingleTemplateMatcher> test1(teststream1, substring);
+		singlematchertest<TNaiveTemplateMatcher> test2(teststream2, substring);
+		TSingleTemplateMatcher SingleMatcher;
+		TNaiveTemplateMatcher NaiveMatcher; 
+		BOOST_CHECK(CompareMatchersResults(SingleMatcher, NaiveMatcher, test1, test2));
+	}
+	
 }

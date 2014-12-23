@@ -9,7 +9,6 @@ typedef int TStringID;
 typedef std::pair<size_t,TStringID> TOccurance;
 typedef std::vector<TOccurance> TMatchResults;
 
-
 class ICharStream {
 public:
 	virtual char GetChar() = 0;
@@ -45,3 +44,6 @@ public:
 		pos = 0;
 	}
 };
+
+
+
